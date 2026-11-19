@@ -357,8 +357,9 @@
 
         <div class="fld hide" id="wrapAbility">
           <label>Ability Repayment <span class="rq">*</span></label>
-          <input class="ctrl" id="fAbility" type="number" min="0" step="0.01" placeholder="e.g. 5000.00">
-          <div class="hint">Total the customer can pay each instalment, interest and fees included.</div>
+          <input class="ctrl" id="fAbility" type="number" step="any" placeholder="Amount per instalment">
+          <div class="hint">Any amount the customer states, interest and fees included. The schedule
+            rebuilds on every keystroke.</div>
         </div>
 
         <div class="fld hide" id="wrapNewTenor">
@@ -548,7 +549,7 @@
     var B = c.bal, odt = D(trx), k = 0, rows = [], dt, dn, int, col, adv, p, coef, fixed, guard;
     while (B > 0) {
       k++;
-      if (k > 1000) return { err: 'Ability Repayment is too small — the schedule would need more than 1,000 instalments.' };
+      if (k > 1000) return { err: 'At ' + m(ability) + ' ' + L.ccy + ' per instalment the loan runs past 1,000 instalments, which is as far as the schedule builder goes. A larger amount gives a workable schedule.' };
       if (k > dates.length) { last = stepDate(last, L.inm, L.term); dates.push(last); }
       dt = dates[k - 1];
       dn = days(odt, dt);
@@ -575,8 +576,8 @@
         break;
       }
       if (p <= 0) {
-        return { err: 'Ability Repayment ' + m(ability) + ' ' + L.ccy + ' does not cover the interest and fees of one instalment (' +
-          m(r2(int + col + adv)) + ' ' + L.ccy + ').' };
+        return { err: 'At ' + m(ability) + ' ' + L.ccy + ' the balance would never come down — one instalment carries ' +
+          m(r2(int + col + adv)) + ' ' + L.ccy + ' of interest and fees on its own. Anything above that builds a schedule.' };
       }
 
       rows.push({ dt: iso(dt), ddt: dsp(dt), dn: dn, prin: p, int: int, col: col, adv: adv,
@@ -828,13 +829,13 @@
         m(g.waivedInt) + ' ' + L.ccy + ' are written off and the rows are stamped PAID.</div></div>');
     }
     if (S.method === 'ABP' && g.newTenor < g.remaining) {
-      notes.push('<div class="alert warn"><div><b>This shortens the loan</b>' + m(ability) + ' ' + L.ccy +
+      notes.push('<div class="alert info"><div><b>This shortens the loan</b>' + m(ability) + ' ' + L.ccy +
         ' per instalment is more than the customer was paying, so the tenor falls from ' + g.remaining +
         ' to ' + g.newTenor + ' and maturity moves back from ' + g.oldMaturity + ' to ' + g.newMaturity + '.</div></div>');
     }
     var lastRow = g.rows[g.rows.length - 1];
     if (S.method === 'ABP' && g.rows.length > 1 && lastRow.tot < ability * 0.1) {
-      notes.push('<div class="alert warn"><div><b>Small final instalment</b>The last instalment is only ' +
+      notes.push('<div class="alert info"><div><b>Small final instalment</b>The last instalment is only ' +
         m(lastRow.tot) + ' ' + L.ccy + '. The arithmetic is right, but it costs the customer an extra collection visit.</div></div>');
     }
     el('formAlert').innerHTML = notes.join('');
@@ -1081,12 +1082,16 @@
 
   // Load a known situation straight into the form. Used by the regression test that checks
   // the engine still returns the agreed figures for each case.
-  window.loadCase = function (n) {
+  window.loadCase = function (n, over) {
     var s = SCN[n];
     if (!s) return false;
     S.acct = s.a; S.trx = s.d; S.method = s.m;
     S.period = s.p === undefined ? '' : s.p;
     S.ability = s.v === undefined ? '' : s.v;
+    if (over) {
+      if (over.ability !== undefined) S.ability = over.ability;
+      if (over.period !== undefined) S.period = over.period;
+    }
     go('FORM'); syncInputs(); recompute();
     return true;
   };
