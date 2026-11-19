@@ -267,6 +267,7 @@
   <h1>Restructure Loan</h1>
   <span id="viewPill" class="pill">List</span>
   <span class="spacer"></span>
+  <span class="crumb" id="sysDate"></span>
   <span class="pill warn">Prototype · demo data</span>
 </div>
 
@@ -329,7 +330,8 @@
         <div class="fld">
           <label>Transaction Date <span class="rq">*</span></label>
           <input class="ctrl" id="fDate" type="date">
-          <div class="hint">The restructure date. Change it and the remaining tenor is counted again.</div>
+          <div class="hint">Defaults to the system date. Every new instalment is dated forward from
+            here, so the customer gets a full period before the first payment.</div>
         </div>
 
         <div class="fld">
@@ -429,36 +431,47 @@
   function floorU(n, u) { return Math.floor(n / u + 1e-9) * u; }
 
   /* ============================ demo accounts ============================ */
+  // The session system date. Transaction Date defaults to it, exactly as the real screen does
+  // (LNT_DATE = $session.SYS_DATE). Each account is positioned so that, as at this date, it
+  // demonstrates a different situation.
+  var SYSDATE = '2026-11-19';
+
   var ACCTS = [
+    // 20 of 30 daily instalments paid, maturity 29-Nov-2026 still ahead — remaining tenor 10.
     { key: 'A', code: 'LD-KOM-26-000187', cif: 'CIF-0041872', cus: 'SOK Dara',
       addr: 'Phum Trapeang Chhuk, Sangkat Stung Meanchey, Phnom Penh', co: 'CHEA Vuthy (CO-118)',
       ccy: 'USD', dbamt: 3000, inm: 'D', inmtxt: 'Daily', term: 1, rate: 0.0005, intbon: 'C',
-      ratetxt: '0.05% per day (1.50% per month)', disb: '2026-09-01', first: '2026-09-02',
-      n: 30, prin: 100, paid: 20, today: '2026-09-21', colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' },
+      ratetxt: '0.05% per day (1.50% per month)', disb: '2026-10-30', first: '2026-10-31',
+      n: 30, prin: 100, paid: 20, colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' },
 
+    // Matured 21-Aug-2026 with 8 instalments never paid — remaining tenor 0.
     { key: 'B', code: 'LD-KOM-26-000092', cif: 'CIF-0039104', cus: 'CHAN Sreypov',
       addr: 'Phum Kandal, Sangkat Chbar Ampov, Phnom Penh', co: 'CHEA Vuthy (CO-118)',
       ccy: 'USD', dbamt: 2000, inm: 'D', inmtxt: 'Daily', term: 1, rate: 0.0005, intbon: 'C',
-      ratetxt: '0.05% per day (1.50% per month)', disb: '2026-06-01', first: '2026-06-02',
-      n: 20, prin: 100, paid: 12, today: '2026-10-15', colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' },
+      ratetxt: '0.05% per day (1.50% per month)', disb: '2026-08-01', first: '2026-08-02',
+      n: 20, prin: 100, paid: 12, colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' },
 
+    // Pays on the 10th, 8 of 24 paid, nothing overdue — 40,000 outstanding, remaining tenor 16.
+    // Restructuring on the 19th moves every future date to the 19th.
     { key: 'C', code: 'LD-KOM-26-000311', cif: 'CIF-0042630', cus: 'LIM Sokhan',
       addr: 'Phum Prey Pring, Sangkat Chom Chao, Phnom Penh', co: 'NOU Chanthy (CO-204)',
       ccy: 'USD', dbamt: 60000, inm: 'M', inmtxt: 'Monthly', term: 1, rate: 0.012, intbon: 'I',
-      ratetxt: '1.20% per month (14.40% per year)', disb: '2026-01-10', first: '2026-02-10',
-      n: 24, prin: 2500, paid: 8, today: '2026-09-10', colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' },
+      ratetxt: '1.20% per month (14.40% per year)', disb: '2026-03-10', first: '2026-04-10',
+      n: 24, prin: 2500, paid: 8, colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' },
 
+    // 5 paid, 3 overdue, 4 still to fall due — the mixed case.
     { key: 'E', code: 'LD-KOM-26-000520', cif: 'CIF-0043917', cus: 'VANN Rithy',
       addr: 'Phum Thnal Bek, Sangkat Dangkao, Phnom Penh', co: 'NOU Chanthy (CO-204)',
       ccy: 'USD', dbamt: 24000, inm: 'M', inmtxt: 'Monthly', term: 1, rate: 0.012, intbon: 'I',
-      ratetxt: '1.20% per month (14.40% per year)', disb: '2026-02-15', first: '2026-03-15',
-      n: 12, prin: 2000, paid: 5, today: '2026-10-15', colrate: 0.005, colbon: 'PRINREPAY', advrate: 0, advbon: 'NONE' },
+      ratetxt: '1.20% per month (14.40% per year)', disb: '2026-03-15', first: '2026-04-15',
+      n: 12, prin: 2000, paid: 5, colrate: 0.005, colbon: 'PRINREPAY', advrate: 0, advbon: 'NONE' },
 
+    // Weekly, 15 of 25 paid — shows that "tenor" counts instalments, not days.
     { key: 'W', code: 'LD-KOM-26-000455', cif: 'CIF-0043102', cus: 'PHAL Doungchan',
       addr: 'Phum Ou Baek Kaam, Sangkat Stung Meanchey, Phnom Penh', co: 'CHEA Vuthy (CO-118)',
       ccy: 'USD', dbamt: 5000, inm: 'W', inmtxt: 'Weekly', term: 1, rate: 0.00345, intbon: 'C',
-      ratetxt: '0.345% per week (1.50% per month)', disb: '2026-03-05', first: '2026-03-12',
-      n: 25, prin: 200, paid: 15, today: '2026-06-20', colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' }
+      ratetxt: '0.345% per week (1.50% per month)', disb: '2026-08-06', first: '2026-08-13',
+      n: 25, prin: 200, paid: 15, colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' }
   ];
   var BY_KEY = {};
   ACCTS.forEach(function (a) { BY_KEY[a.key] = a; });
@@ -516,11 +529,14 @@
     if (method === 'ENT' && !(period >= 1)) return { err: 'Extend Number of Tenor must be at least 1.' };
     if (method === 'ABP' && !(ability > 0)) return { err: 'Ability Repayment must be more than 0.' };
 
+    // Every new instalment date runs forward from the restructure date at the loan's own
+    // frequency. The dates the old schedule carried are NOT reused, so the customer always gets a
+    // full period before the first new payment instead of whatever stub the old cycle left.
     var u = unitOf(L.ccy), dc = dayCount(L);
-    var dates = c.fut.map(function (r) { return D(r.dt); });
-    var reused = dates.length;
+    var dates = [];
+    var reused = c.fut.length;   // the remaining tenor: the first `reused` new rows stand in for it
     var need = method === 'ENT' ? reused + period : null;
-    var last = dates.length ? dates[dates.length - 1] : D(trx);
+    var last = D(trx);
     var equal = null;
 
     if (method === 'ENT') {
@@ -629,25 +645,25 @@
   var S = { view: 'LIST', acct: null, trx: '', method: 'ENT', period: '', ability: '', g: null, err: null, showPaid: true };
 
   var SCN = {
-    1: { a: 'A', d: '2026-09-21', m: 'ENT', p: '' },
-    2: { a: 'B', d: '2026-10-15', m: 'ENT', p: 20 },
-    3: { a: 'A', d: '2026-09-21', m: 'ENT', p: 20 },
-    5: { a: 'C', d: '2026-09-10', m: 'ABP', v: 5000 },
-    6: { a: 'C', d: '2026-09-10', m: 'ABP', v: 2000 },
-    7: { a: 'E', d: '2026-10-15', m: 'ENT', p: 6 },
-    8: { a: 'W', d: '2026-06-20', m: 'ENT', p: 10 },
-    9: { a: 'E', d: '2026-10-15', m: 'ENT' }
+    1: { a: 'A', d: SYSDATE, m: 'ENT', p: '' },
+    2: { a: 'B', d: SYSDATE, m: 'ENT', p: 20 },
+    3: { a: 'A', d: SYSDATE, m: 'ENT', p: 20 },
+    5: { a: 'C', d: SYSDATE, m: 'ABP', v: 5000 },
+    6: { a: 'C', d: SYSDATE, m: 'ABP', v: 2000 },
+    7: { a: 'E', d: SYSDATE, m: 'ENT', p: 6 },
+    8: { a: 'W', d: SYSDATE, m: 'ENT', p: 10 },
+    9: { a: 'E', d: SYSDATE, m: 'ENT' }
   };
 
   /* ============================ list view ============================ */
   function renderList() {
     el('listBody').innerHTML = ACCTS.map(function (L, i) {
-      var c = classify(L, L.today);
+      var c = classify(L, SYSDATE);
       var st = c.fut.length === 0 ? 'Past maturity' : c.over.length ? 'Part overdue' : 'Current';
       var cls = c.fut.length === 0 ? 'od' : c.over.length ? 'od' : 'ok';
       return '<tr data-acct="' + L.key + '">' +
         '<td><code>RST-26-' + String(1041 + i) + '</code></td>' +
-        '<td>' + dsp(D(L.today)) + '</td>' +
+        '<td>' + dsp(D(SYSDATE)) + '</td>' +
         '<td><span class="state ' + cls + '">' + st + '</span></td>' +
         '<td><code>' + esc(L.code) + '</code></td>' +
         '<td>' + esc(L.cus) + '</td>' +
@@ -677,7 +693,7 @@
       el('mBody').innerHTML = ACCTS.filter(function (L) {
         return !q || L.cus.toLowerCase().indexOf(q) >= 0 || L.code.toLowerCase().indexOf(q) >= 0;
       }).map(function (L) {
-        var c = classify(L, L.today);
+        var c = classify(L, SYSDATE);
         var st = c.fut.length === 0 ? 'Past maturity' : c.over.length ? 'Part overdue' : 'Current';
         var cls = c.fut.length === 0 ? 'od' : c.over.length ? 'od' : 'ok';
         var ini = L.cus.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2);
@@ -711,7 +727,7 @@
   /* ============================ form ============================ */
   function openAccount(key) {
     var L = BY_KEY[key];
-    S.acct = key; S.trx = L.today; S.period = ''; S.ability = ''; S.method = 'ENT';
+    S.acct = key; S.trx = SYSDATE; S.period = ''; S.ability = ''; S.method = 'ENT';
     go('FORM'); syncInputs(); recompute();
   }
 
@@ -802,7 +818,7 @@
     el('fNewTenor').value = g.newTenor;
     el('hintNewTenor').textContent = S.method === 'ENT'
       ? g.remaining + ' remaining + ' + period + ' added'
-      : g.reused + ' on existing dates' + (g.added ? ' + ' + g.added + ' generated' : '');
+      : g.reused + ' replacing the remaining tenor' + (g.added ? ' + ' + g.added + ' added' : '');
 
     var notes = [];
     if (g.c.over.length) {
@@ -838,7 +854,7 @@
       { k: 'Outstanding', v: m(c.bal), s: L.ccy }
     ];
     if (g) {
-      items.push({ k: 'New tenor', v: g.newTenor, s: g.added ? g.reused + ' + ' + g.added + ' new dates' : 'on existing dates', cls: 'b' });
+      items.push({ k: 'New tenor', v: g.newTenor, s: g.added ? g.reused + ' + ' + g.added + ' added' : 'all dates re-based', cls: 'b' });
       items.push({ k: 'New maturity', v: '<span style="font-size:15px">' + g.newMaturity + '</span>', s: 'was ' + g.oldMaturity, cls: 'b' });
       items.push({ k: 'Interest to pay', v: m(g.totInt), s: L.ccy });
     }
@@ -904,11 +920,11 @@
       }
       if (r.band === 'reused' && !shownNew) {
         shownNew = true;
-        body += sep('New schedule — on the dates the loan already had', 'from ' + dsp(D(S.trx)));
+        body += sep('New schedule — stands in for the remaining tenor', 'dated forward from ' + dsp(D(S.trx)));
       }
       if (r.band === 'added' && !shownAdd) {
         shownAdd = true;
-        body += sep('New schedule — dates added by the restructure', g ? 'past ' + g.oldMaturity : '');
+        body += sep('Added tenor', g ? 'past the original maturity ' + g.oldMaturity : '');
       }
       var slsCls = (r.band === 'closed' || r.band === 'overdue') ? 'c'
                  : r.sls === 'PAID' ? 'p' : (r.band === 'added' ? 'n a' : 'n');
@@ -925,7 +941,7 @@
     el('legend').innerHTML = g
       ? '<span><i class="paid"></i> Settled</span>' +
         (g.c.over.length ? '<span><i class="closed"></i> Overdue, closed off (' + g.c.over.length + ')</span>' : '') +
-        '<span><i class="reused"></i> New schedule, existing dates (' + g.reused + ')</span>' +
+        '<span><i class="reused"></i> Stands in for the remaining tenor (' + g.reused + ')</span>' +
         (g.added ? '<span><i class="added"></i> Added by the restructure (' + g.added + ')</span>' : '')
       : '<span><i class="paid"></i> Settled</span>' +
         (nOver ? '<span><i class="closed"></i> Overdue (' + nOver + ')</span>' : '') +
@@ -1032,7 +1048,7 @@
 
   /* ============================ wiring ============================ */
   el('btnNew').addEventListener('click', function () {
-    S.acct = null; S.trx = '2026-09-21'; S.method = 'ENT'; S.period = ''; S.ability = '';
+    S.acct = null; S.trx = SYSDATE; S.method = 'ENT'; S.period = ''; S.ability = '';
     go('FORM'); recompute();
   });
   el('btnBack').addEventListener('click', function () { go('LIST'); });
@@ -1046,7 +1062,7 @@
   el('btnReset').addEventListener('click', function () {
     if (!S.acct) return;
     var L = BY_KEY[S.acct];
-    S.trx = L.today; S.period = ''; S.ability = ''; S.method = 'ENT';
+    S.trx = SYSDATE; S.period = ''; S.ability = ''; S.method = 'ENT';
     syncInputs(); recompute();
   });
   el('btnSave').addEventListener('click', function () {
@@ -1075,6 +1091,7 @@
     return true;
   };
 
+  el('sysDate').textContent = 'System date ' + dsp(D(SYSDATE));
   renderList();
   recompute();
 })();
