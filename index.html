@@ -1,0 +1,1084 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Restructure Loan Prototype</title>
+<style>
+  :root {
+    --bg: #EEF1F5;
+    --card: #FFFFFF;
+    --head: #F4F6F9;
+    --ink: #2A3042;
+    --ink-2: #4B5468;
+    --muted: #7A8398;
+    --rule: #DDE2EA;
+    --rule-2: #C2C9D6;
+    --primary: #2A5CAA;
+    --primary-soft: #E8EFFA;
+    --primary-edge: #9DB8E0;
+    --teal: #0C6B5D;
+    --teal-soft: #E2F2EF;
+    --teal-edge: #7CC0B5;
+    --crimson: #A32F2C;
+    --crimson-soft: #FAEAE9;
+    --amber: #8A6208;
+    --amber-soft: #FCF3DE;
+    --on-accent: #FFFFFF;
+    --shade: 0 1px 2px rgba(42, 48, 66, .07), 0 6px 18px -10px rgba(42, 48, 66, .2);
+    --sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: "Cascadia Mono", Consolas, "SF Mono", ui-monospace, monospace;
+    --khmer: "Khmer OS Battambang", "Khmer OS", "Noto Sans Khmer", "Leelawadee UI", var(--sans);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1217; --card: #171B22; --head: #1E232C; --ink: #DEE3EB; --ink-2: #B4BCC9;
+      --muted: #868FA1; --rule: #272D37; --rule-2: #3A4250;
+      --primary: #8CB0E6; --primary-soft: #182538; --primary-edge: #3C5986;
+      --teal: #5FC9B6; --teal-soft: #102723; --teal-edge: #2D6A60;
+      --crimson: #E88C8A; --crimson-soft: #2D1716; --amber: #DEA94A; --amber-soft: #2A2112;
+      --on-accent: #0F1217;
+      --shade: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px -10px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1217; --card: #171B22; --head: #1E232C; --ink: #DEE3EB; --ink-2: #B4BCC9;
+    --muted: #868FA1; --rule: #272D37; --rule-2: #3A4250;
+    --primary: #8CB0E6; --primary-soft: #182538; --primary-edge: #3C5986;
+    --teal: #5FC9B6; --teal-soft: #102723; --teal-edge: #2D6A60;
+    --crimson: #E88C8A; --crimson-soft: #2D1716; --amber: #DEA94A; --amber-soft: #2A2112;
+    --on-accent: #0F1217;
+    --shade: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px -10px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .hide { display: none !important; }
+
+  /* ---------- app chrome ---------- */
+  .appbar {
+    background: var(--card); border-bottom: 1px solid var(--rule); padding: 0 20px;
+    display: flex; align-items: center; gap: 14px; height: 54px; position: sticky; top: 0; z-index: 30;
+  }
+  .appbar .brand { font-weight: 700; letter-spacing: .04em; font-size: 13px; color: var(--primary); }
+  .appbar .crumb { color: var(--muted); font-size: 13px; }
+  .appbar h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  .appbar .spacer { margin-left: auto; }
+  .pill {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 10px; background: var(--primary-soft);
+    color: var(--primary); border: 1px solid var(--primary-edge);
+  }
+  .pill.ok { background: var(--teal-soft); color: var(--teal); border-color: var(--teal-edge); }
+  .pill.warn { background: var(--amber-soft); color: var(--amber); border-color: var(--amber); }
+
+  .page { padding: 20px; max-width: 1500px; margin: 0 auto; }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    font: inherit; font-size: 13px; cursor: pointer; padding: 7px 15px; border-radius: 3px;
+    border: 1px solid var(--rule-2); background: var(--card); color: var(--ink);
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn:hover { border-color: var(--primary); color: var(--primary); }
+  .btn.primary { background: var(--primary); border-color: var(--primary); color: var(--on-accent); font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.08); color: var(--on-accent); }
+  .btn.ghost { background: transparent; }
+  .btn.sm { padding: 4px 9px; font-size: 12px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+  /* ---------- card ---------- */
+  .card { background: var(--card); border: 1px solid var(--rule); border-radius: 4px; box-shadow: var(--shade); margin-bottom: 16px; }
+  .card > .ch {
+    padding: 11px 16px; border-bottom: 1px solid var(--rule); background: var(--head);
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-radius: 4px 4px 0 0;
+  }
+  .card > .ch h2 { font-size: 14px; margin: 0; font-weight: 600; }
+  .card > .ch .spacer { margin-left: auto; }
+  .card > .cb { padding: 16px; }
+
+  /* ---------- form ---------- */
+  .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 18px; }
+  .fld label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px; }
+  .fld label .rq { color: var(--crimson); }
+  .fld label .nu {
+    background: var(--teal); color: var(--on-accent); font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 2px; margin-left: 5px; letter-spacing: .06em; vertical-align: 1px;
+  }
+  .ctrl {
+    width: 100%; font: inherit; font-size: 13.5px; padding: 7px 10px; border-radius: 3px;
+    border: 1px solid var(--rule-2); background: var(--card); color: var(--ink); min-height: 36px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ctrl:disabled, .ctrl[readonly] { background: var(--head); color: var(--ink-2); cursor: default; }
+  select.ctrl { cursor: pointer; }
+  .ctrl.calc { background: var(--head); font-weight: 700; color: var(--primary); }
+  .ctrl.pick { text-align: left; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .ctrl.pick:hover { border-color: var(--primary); }
+  .ctrl.pick .ph { color: var(--muted); }
+  .ctrl.pick svg { width: 15px; height: 15px; stroke: var(--muted); fill: none; stroke-width: 1.8; flex: none; }
+  .fld .hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .fld .sup { float: right; font-size: 11.5px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  /* ---------- alert ---------- */
+  .alert {
+    display: flex; gap: 11px; padding: 11px 14px; border-radius: 3px; font-size: 13px;
+    border: 1px solid var(--crimson); background: var(--crimson-soft); color: var(--crimson); margin-bottom: 14px;
+  }
+  .alert.info { border-color: var(--primary-edge); background: var(--primary-soft); color: var(--primary); }
+  .alert.warn { border-color: var(--amber); background: var(--amber-soft); color: var(--amber); }
+  .alert b { display: block; margin-bottom: 2px; }
+
+  /* ---------- tables ---------- */
+  .tw { overflow-x: auto; }
+  table.g { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  table.g th, table.g td { padding: 5px 9px; border-bottom: 1px solid var(--rule); white-space: nowrap; text-align: right; }
+  table.g th.l, table.g td.l { text-align: left; }
+  table.g th.c, table.g td.c { text-align: center; }
+  table.g thead tr.tot th {
+    background: var(--head); font-weight: 700; font-size: 12.5px; color: var(--ink);
+    border-bottom: 1px solid var(--rule); padding-top: 9px; padding-bottom: 9px;
+  }
+  table.g thead tr.tot th.ttl { font-size: 13px; }
+  table.g thead tr.cols th {
+    position: sticky; top: 0; background: var(--head); font-weight: 600; font-size: 10.5px;
+    letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--rule-2); z-index: 2;
+  }
+  table.g tbody tr.paid { color: var(--muted); }
+  table.g tbody tr.closed, table.g tbody tr.overdue { background: var(--crimson-soft); color: var(--crimson); }
+  table.g tbody tr.reused, table.g tbody tr.due { background: var(--primary-soft); }
+  table.g tbody tr.added { background: var(--teal-soft); }
+  table.g tbody tr.closed td:first-child, table.g tbody tr.overdue td:first-child { box-shadow: inset 3px 0 0 var(--crimson); }
+  table.g tbody tr.reused td:first-child, table.g tbody tr.due td:first-child { box-shadow: inset 3px 0 0 var(--primary); }
+  table.g tbody tr.added td:first-child { box-shadow: inset 3px 0 0 var(--teal); }
+  table.g tbody tr:hover { filter: brightness(.985); }
+  table.g tr.sep td {
+    background: var(--bg); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+    font-weight: 700; text-align: left; color: var(--ink); padding: 7px 9px;
+    border-top: 1px solid var(--rule-2); border-bottom: 1px solid var(--rule-2);
+  }
+  table.g tr.sep td .rt { float: right; font-weight: 500; letter-spacing: .03em; text-transform: none; color: var(--muted); }
+  .sls { font-size: 10px; font-weight: 700; letter-spacing: .06em; }
+  .sls.p { color: var(--muted); }
+  .sls.c { color: var(--crimson); }
+  .sls.n { color: var(--primary); }
+  .sls.n.a { color: var(--teal); }
+
+  table.list { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.list th, table.list td { padding: 9px 12px; border-bottom: 1px solid var(--rule); text-align: left; white-space: nowrap; }
+  table.list th { background: var(--head); font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  table.list td.r, table.list th.r { text-align: right; font-variant-numeric: tabular-nums; }
+  table.list tbody tr { cursor: pointer; }
+  table.list tbody tr:hover { background: var(--primary-soft); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 7px 20px; font-size: 12px; color: var(--ink-2); padding: 11px 16px 0; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 20px; height: 11px; display: inline-block; border: 1px solid var(--rule-2); }
+  .legend i.paid { background: var(--card); }
+  .legend i.closed { background: var(--crimson-soft); border-left: 3px solid var(--crimson); }
+  .legend i.reused { background: var(--primary-soft); border-left: 3px solid var(--primary); }
+  .legend i.added { background: var(--teal-soft); border-left: 3px solid var(--teal); }
+
+  /* ---------- summary strip ---------- */
+  .sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); }
+  .sum div { background: var(--card); padding: 11px 14px; }
+  .sum dt { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
+  .sum dd { margin: 0; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; font-family: var(--serif); }
+  .sum dd small { display: block; font-size: 11px; color: var(--muted); font-family: var(--sans); font-weight: 500; margin-top: 2px; }
+  .sum div.a dd { color: var(--primary); }
+  .sum div.b dd { color: var(--teal); }
+
+  /* ---------- modal ---------- */
+  .backdrop { position: fixed; inset: 0; background: rgba(20, 24, 33, .5); z-index: 100; display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px 16px; overflow-y: auto; }
+  .modal { background: var(--card); border-radius: 5px; width: 100%; max-width: 820px; box-shadow: 0 20px 60px -20px rgba(0,0,0,.5); border: 1px solid var(--rule-2); }
+  .modal .mh { padding: 13px 18px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; }
+  .modal .mh h3 { margin: 0; font-size: 15px; font-weight: 600; }
+  .modal .mh button { margin-left: auto; background: none; border: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--muted); padding: 0 4px; }
+  .modal .mb { padding: 16px 18px 18px; }
+  .search { position: relative; margin-bottom: 12px; }
+  .search input { width: 100%; font: inherit; font-size: 13.5px; padding: 8px 12px 8px 34px; border: 1px solid var(--rule-2); border-radius: 3px; background: var(--card); color: var(--ink); }
+  .search svg { position: absolute; left: 11px; top: 10px; width: 15px; height: 15px; stroke: var(--muted); fill: none; stroke-width: 1.9; }
+  .pickrow { display: flex; align-items: center; gap: 10px; }
+  .pickrow .av { width: 30px; height: 30px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); display: grid; place-items: center; font-weight: 700; font-size: 11.5px; flex: none; }
+  .pickrow .nm { font-weight: 600; }
+  .pickrow .cd { font-size: 11.5px; color: var(--muted); font-family: var(--mono); }
+  .state { font-size: 11px; padding: 2px 7px; border-radius: 9px; border: 1px solid var(--rule-2); color: var(--muted); }
+  .state.od { border-color: var(--crimson); color: var(--crimson); background: var(--crimson-soft); }
+  .state.ok { border-color: var(--teal-edge); color: var(--teal); background: var(--teal-soft); }
+
+  /* ---------- report ---------- */
+  .rptwrap { background: var(--bg); padding: 0 0 20px; }
+  .rptbar { display: flex; align-items: center; gap: 10px; padding: 12px 0; flex-wrap: wrap; }
+  .sheet { background: #FFFFFF; color: #16181D; border: 1px solid var(--rule-2); box-shadow: var(--shade); padding: 32px 30px; font-family: var(--serif); max-width: 1000px; margin: 0 auto; }
+  .sheet .rh { text-align: center; border-bottom: 2px solid #16181D; padding-bottom: 12px; margin-bottom: 16px; }
+  .sheet .rh .org { font-family: var(--sans); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: #5E6676; font-weight: 700; }
+  .sheet .rh .kh { font-family: var(--khmer); font-size: 16px; margin: 7px 0 2px; }
+  .sheet .rh h4 { margin: 0; font-size: 21px; font-weight: 600; }
+  .sheet .ri { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2px 34px; font-size: 13px; margin-bottom: 16px; }
+  .sheet .ri .r { display: flex; gap: 10px; border-bottom: 1px dotted #C9CED8; padding: 3px 0; }
+  .sheet .ri .k { color: #5E6676; min-width: 140px; font-family: var(--sans); font-size: 11.5px; }
+  .sheet .ri .k .kh { font-family: var(--khmer); }
+  .sheet .ri .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .sheet .rx { border: 1px solid #9DB8E0; background: #EEF3FB; padding: 13px 15px; margin-bottom: 18px; }
+  .sheet .rx .cap { font-family: var(--sans); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; font-weight: 700; color: #2A5CAA; margin-bottom: 9px; }
+  .sheet .rx .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 12px 18px; }
+  .sheet .rx .cols div { font-family: var(--sans); font-size: 11.5px; color: #4B5468; }
+  .sheet .rx .cols b { display: block; font-family: var(--serif); font-size: 19px; color: #16181D; font-variant-numeric: tabular-nums; margin-top: 1px; }
+  .sheet table.g { font-size: 12px; }
+  .sheet table.g th, .sheet table.g td { border-bottom: 1px solid #DDE2EA; }
+  .sheet table.g thead tr.cols th { background: #F2F4F8; color: #5E6676; position: static; border-bottom: 1px solid #9AA2AE; }
+  .sheet table.g tbody tr.reused { background: #EEF3FB; }
+  .sheet table.g tbody tr.added { background: #E6F3F0; }
+  .sheet table.g tbody tr.closed { background: #FBEDEC; color: #A32F2C; }
+  .sheet table.g tbody tr.paid { color: #5E6676; }
+  .sheet table.g tr.sep td { background: #F2F4F8; color: #16181D; border-color: #9AA2AE; }
+  .sheet table.g tr.sep td .rt { color: #5E6676; }
+  .sheet table.g tfoot td { font-weight: 700; background: #F2F4F8; border-top: 2px solid #16181D; border-bottom: none; padding: 8px 9px; }
+  .sheet .sg { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 24px; margin-top: 30px; text-align: center; font-size: 12px; }
+  .sheet .sg div { border-top: 1px solid #16181D; padding-top: 6px; color: #4B5468; }
+  .sheet .sg div span { display: block; color: #7A8398; font-size: 10.5px; margin-top: 20px; font-family: var(--sans); }
+  .kh { font-family: var(--khmer); }
+
+  .foot { color: var(--muted); font-size: 12px; padding: 4px 2px 0; }
+
+  @media print {
+    body { background: #fff; }
+    .appbar, .rptbar, .noprint { display: none !important; }
+    .page, .rptwrap { padding: 0; }
+    .sheet { border: none; box-shadow: none; max-width: none; padding: 0; }
+    table.g tbody tr, table.g tr.sep { break-inside: avoid; page-break-inside: avoid; }
+    .sheet .rh, .sheet .ri, .sheet .rx, .sheet .sg { break-inside: avoid; page-break-inside: avoid; }
+    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+
+<div class="appbar">
+  <span class="brand">KOMCHEY LMS</span>
+  <span class="crumb">Loan Management /</span>
+  <h1>Restructure Loan</h1>
+  <span id="viewPill" class="pill">List</span>
+  <span class="spacer"></span>
+  <span class="pill warn">Prototype · demo data</span>
+</div>
+
+<div id="viewList" class="page">
+  <div class="card">
+    <div class="ch">
+      <h2>Restructure transactions</h2>
+      <span class="spacer"></span>
+      <button class="btn primary" id="btnNew">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> New restructure
+      </button>
+    </div>
+    <div class="tw">
+      <table class="list">
+        <thead>
+          <tr>
+            <th>Tran code</th><th>Tran date</th><th>Status</th><th>Account</th><th>Customer</th>
+            <th class="r">Disbursed</th><th class="r">Outstanding</th><th>Method</th>
+          </tr>
+        </thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+    <div class="cb foot">Click a row to open it, or start a new one. These are demonstration records — no real customer data is used anywhere in this prototype.</div>
+  </div>
+</div>
+
+<div id="viewForm" class="page hide">
+  <div id="formAlert"></div>
+
+  <div class="card">
+    <div class="ch">
+      <h2>Restructure details</h2>
+      <span class="spacer"></span>
+      <span id="stsPill" class="pill">New</span>
+    </div>
+    <div class="cb">
+      <div class="form">
+        <div class="fld">
+          <label>Account Number <span class="rq">*</span>
+            <span class="sup" id="supDisb"></span>
+          </label>
+          <button type="button" class="ctrl pick" id="pickAcct">
+            <span id="pickTxt" class="ph">Select customer…</span>
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
+          <div class="hint" id="hintAcct">Pick an account to load its schedule.</div>
+        </div>
+
+        <div class="fld">
+          <label>Customer Address</label>
+          <input class="ctrl" id="fAddr" readonly value="">
+        </div>
+
+        <div class="fld">
+          <label>CO / Officer</label>
+          <input class="ctrl" id="fCo" readonly value="">
+        </div>
+
+        <div class="fld">
+          <label>Transaction Date <span class="rq">*</span></label>
+          <input class="ctrl" id="fDate" type="date">
+          <div class="hint">The restructure date. Change it and the remaining tenor is counted again.</div>
+        </div>
+
+        <div class="fld">
+          <label>Restructure Method <span class="rq">*</span></label>
+          <select class="ctrl" id="fMethod">
+            <option value="ENT">Extend Number of Tenor</option>
+            <option value="ABP">Ability Repayment</option>
+            <option value="CSH">Customer Schedule</option>
+          </select>
+        </div>
+
+        <div class="fld" id="wrapRemain">
+          <label>Remaining Tenor <span class="nu">NEW</span></label>
+          <input class="ctrl calc" id="fRemain" readonly value="">
+          <div class="hint" id="hintRemain">Instalments still due after the transaction date.</div>
+        </div>
+
+        <div class="fld hide" id="wrapPeriod">
+          <label>Extend Number of Tenor <span class="rq">*</span></label>
+          <input class="ctrl" id="fPeriod" type="number" min="1" step="1" placeholder="e.g. 20">
+          <div class="hint">Instalments to add on top of the remaining tenor.</div>
+        </div>
+
+        <div class="fld hide" id="wrapAbility">
+          <label>Ability Repayment <span class="rq">*</span></label>
+          <input class="ctrl" id="fAbility" type="number" min="0" step="0.01" placeholder="e.g. 5000.00">
+          <div class="hint">Total the customer can pay each instalment, interest and fees included.</div>
+        </div>
+
+        <div class="fld hide" id="wrapNewTenor">
+          <label>New Tenor <span class="nu">NEW</span></label>
+          <input class="ctrl calc" id="fNewTenor" readonly value="">
+          <div class="hint" id="hintNewTenor"></div>
+        </div>
+      </div>
+    </div>
+    <dl class="sum" id="sumStrip"></dl>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <h2>Loan Schedule</h2>
+      <span class="spacer"></span>
+      <label style="font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="cbPaid" checked> Show settled instalments
+      </label>
+      <button class="btn sm" id="btnCalc"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h2m3 0h3M8 16h2m3 0h3"/></svg> Calculate</button>
+      <button class="btn sm" id="btnPrint"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4v-6h16v6h-2"/><rect x="8" y="14" width="8" height="8"/></svg> Print new schedule</button>
+      <button class="btn sm" id="btnReset"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg> Reset</button>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="tw" id="gridWrap"></div>
+    <div class="cb foot" id="gridFoot"></div>
+  </div>
+
+  <div class="card">
+    <div class="cb" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="btnBack">Back to list</button>
+      <span style="flex:1"></span>
+      <button class="btn primary" id="btnSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="viewReport" class="page rptwrap hide">
+  <div class="rptbar noprint">
+    <button class="btn" id="btnRptBack">Back to form</button>
+    <span style="flex:1"></span>
+    <label style="font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:6px;cursor:pointer">
+      <input type="checkbox" id="cbRptOld" checked> Include the old schedule
+    </label>
+    <button class="btn primary" id="btnDoPrint"><svg viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4v-6h16v6h-2"/><rect x="8" y="14" width="8" height="8"/></svg> Print / Save as PDF</button>
+  </div>
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div id="modalWrap"></div>
+<script>
+(function () {
+  'use strict';
+
+  /* ============================ helpers ============================ */
+  var MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function D(s) { return new Date(s + 'T00:00:00Z'); }
+  function iso(d) { return d.toISOString().slice(0, 10); }
+  function dsp(d) { return String(d.getUTCDate()).padStart(2, '0') + '-' + MN[d.getUTCMonth()] + '-' + d.getUTCFullYear(); }
+  function addD(d, n) { return new Date(d.getTime() + n * 86400000); }
+  function addM(d, n) { var x = new Date(d.getTime()); x.setUTCMonth(x.getUTCMonth() + n); return x; }
+  function stepDate(d, inm, term) { return inm === 'M' ? addM(d, term) : inm === 'W' ? addD(d, 7 * term) : addD(d, term); }
+  function days(a, b) { return Math.round((b - a) / 86400000); }
+  function r2(n) { return Math.round(n * 100 + 1e-6) / 100; }
+  function m(n) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function el(id) { return document.getElementById(id); }
+  function unitOf(ccy) { return ccy === 'KHR' ? 100 : 0.01; }
+  function rnd(n, ccy) { return ccy === 'KHR' ? Math.round((n + 49.99) / 100) * 100 : r2(n); }
+  function floorU(n, u) { return Math.floor(n / u + 1e-9) * u; }
+
+  /* ============================ demo accounts ============================ */
+  var ACCTS = [
+    { key: 'A', code: 'LD-KOM-26-000187', cif: 'CIF-0041872', cus: 'SOK Dara',
+      addr: 'Phum Trapeang Chhuk, Sangkat Stung Meanchey, Phnom Penh', co: 'CHEA Vuthy (CO-118)',
+      ccy: 'USD', dbamt: 3000, inm: 'D', inmtxt: 'Daily', term: 1, rate: 0.0005, intbon: 'C',
+      ratetxt: '0.05% per day (1.50% per month)', disb: '2026-09-01', first: '2026-09-02',
+      n: 30, prin: 100, paid: 20, today: '2026-09-21', colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' },
+
+    { key: 'B', code: 'LD-KOM-26-000092', cif: 'CIF-0039104', cus: 'CHAN Sreypov',
+      addr: 'Phum Kandal, Sangkat Chbar Ampov, Phnom Penh', co: 'CHEA Vuthy (CO-118)',
+      ccy: 'USD', dbamt: 2000, inm: 'D', inmtxt: 'Daily', term: 1, rate: 0.0005, intbon: 'C',
+      ratetxt: '0.05% per day (1.50% per month)', disb: '2026-06-01', first: '2026-06-02',
+      n: 20, prin: 100, paid: 12, today: '2026-10-15', colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' },
+
+    { key: 'C', code: 'LD-KOM-26-000311', cif: 'CIF-0042630', cus: 'LIM Sokhan',
+      addr: 'Phum Prey Pring, Sangkat Chom Chao, Phnom Penh', co: 'NOU Chanthy (CO-204)',
+      ccy: 'USD', dbamt: 60000, inm: 'M', inmtxt: 'Monthly', term: 1, rate: 0.012, intbon: 'I',
+      ratetxt: '1.20% per month (14.40% per year)', disb: '2026-01-10', first: '2026-02-10',
+      n: 24, prin: 2500, paid: 8, today: '2026-09-10', colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' },
+
+    { key: 'E', code: 'LD-KOM-26-000520', cif: 'CIF-0043917', cus: 'VANN Rithy',
+      addr: 'Phum Thnal Bek, Sangkat Dangkao, Phnom Penh', co: 'NOU Chanthy (CO-204)',
+      ccy: 'USD', dbamt: 24000, inm: 'M', inmtxt: 'Monthly', term: 1, rate: 0.012, intbon: 'I',
+      ratetxt: '1.20% per month (14.40% per year)', disb: '2026-02-15', first: '2026-03-15',
+      n: 12, prin: 2000, paid: 5, today: '2026-10-15', colrate: 0.005, colbon: 'PRINREPAY', advrate: 0, advbon: 'NONE' },
+
+    { key: 'W', code: 'LD-KOM-26-000455', cif: 'CIF-0043102', cus: 'PHAL Doungchan',
+      addr: 'Phum Ou Baek Kaam, Sangkat Stung Meanchey, Phnom Penh', co: 'CHEA Vuthy (CO-118)',
+      ccy: 'USD', dbamt: 5000, inm: 'W', inmtxt: 'Weekly', term: 1, rate: 0.00345, intbon: 'C',
+      ratetxt: '0.345% per week (1.50% per month)', disb: '2026-03-05', first: '2026-03-12',
+      n: 25, prin: 200, paid: 15, today: '2026-06-20', colrate: 0, colbon: 'NONE', advrate: 0, advbon: 'NONE' }
+  ];
+  var BY_KEY = {};
+  ACCTS.forEach(function (a) { BY_KEY[a.key] = a; });
+
+  function dayCount(L) { return L.inm === 'M' ? 30 : L.inm === 'W' ? 7 : 1; }
+
+  function feeOf(rate, bon, prin, int, dbamt, bal) {
+    if (!rate) return 0;
+    switch (bon) {
+      case 'PRINREPAY': return rate * prin;
+      case 'INTREPAY': return rate * int;
+      case 'TOTALREPAY': return rate * (prin + int);
+      case 'DBAMT': return rate * dbamt;
+      case 'DBBAL': return rate * bal;
+      default: return 0;
+    }
+  }
+
+  /* ============================ original schedule ============================ */
+  function buildOriginal(L) {
+    var bal = L.dbamt, odt = D(L.disb), rows = [], i, dt, dn, p, int, col, adv;
+    for (i = 1; i <= L.n; i++) {
+      dt = L.inm === 'M' ? addM(D(L.first), L.term * (i - 1)) : addD(D(L.first), (L.inm === 'W' ? 7 : 1) * L.term * (i - 1));
+      dn = days(odt, dt);
+      p = i === L.n ? r2(bal) : L.prin;
+      int = rnd(L.intbon === 'I' ? bal * L.rate : bal * dn * L.rate, L.ccy);
+      col = rnd(feeOf(L.colrate, L.colbon, p, int, L.dbamt, bal), L.ccy);
+      adv = rnd(feeOf(L.advrate, L.advbon, p, int, L.dbamt, bal), L.ccy);
+      rows.push({ no: i, dt: iso(dt), ddt: dsp(dt), dn: dn, prin: p, int: int, col: col, adv: adv,
+                  tot: r2(p + int + col + adv), bal: r2(bal - p) });
+      bal = r2(bal - p); odt = dt;
+    }
+    return rows;
+  }
+
+  function classify(L, trx) {
+    var orig = buildOriginal(L), rst = D(trx), kept = [], over = [], fut = [];
+    orig.forEach(function (r, i) {
+      if (i < L.paid) kept.push(r);
+      else if (D(r.dt) <= rst) over.push(r);
+      else fut.push(r);
+    });
+    var paidPrin = r2(kept.reduce(function (s, r) { return s + r.prin; }, 0));
+    return { orig: orig, kept: kept, over: over, fut: fut, paidPrin: paidPrin, bal: r2(L.dbamt - paidPrin) };
+  }
+
+  /* ============================ the restructure engine ============================ */
+  function generate(L, trx, method, period, ability) {
+    var c = classify(L, trx);
+    if (c.kept.length && D(c.kept[c.kept.length - 1].dt) > D(trx)) {
+      return { err: 'Transaction Date is earlier than the last paid instalment (' + c.kept[c.kept.length - 1].ddt +
+        '). Move the date forward, or use Customer Schedule for this loan.' };
+    }
+    if (c.bal <= 0) return { err: 'This loan has no outstanding principal to restructure.' };
+    if (method === 'ENT' && !(period >= 1)) return { err: 'Extend Number of Tenor must be at least 1.' };
+    if (method === 'ABP' && !(ability > 0)) return { err: 'Ability Repayment must be more than 0.' };
+
+    var u = unitOf(L.ccy), dc = dayCount(L);
+    var dates = c.fut.map(function (r) { return D(r.dt); });
+    var reused = dates.length;
+    var need = method === 'ENT' ? reused + period : null;
+    var last = dates.length ? dates[dates.length - 1] : D(trx);
+    var equal = null;
+
+    if (method === 'ENT') {
+      equal = rnd(c.bal / need, L.ccy);
+      if (r2(equal * (need - 1)) >= c.bal) equal = floorU(c.bal / need, u);
+      if (equal <= 0) return { err: 'The outstanding principal is too small to spread over ' + need + ' instalments.' };
+    }
+
+    var B = c.bal, odt = D(trx), k = 0, rows = [], dt, dn, int, col, adv, p, coef, fixed, guard;
+    while (B > 0) {
+      k++;
+      if (k > 1000) return { err: 'Ability Repayment is too small — the schedule would need more than 1,000 instalments.' };
+      if (k > dates.length) { last = stepDate(last, L.inm, L.term); dates.push(last); }
+      dt = dates[k - 1];
+      dn = days(odt, dt);
+      int = rnd(L.intbon === 'I' ? B * L.rate : B * dn * L.rate, L.ccy);
+
+      if (method === 'ENT') {
+        p = (k >= need || equal >= B) ? B : equal;
+      } else {
+        coef = (L.colbon === 'PRINREPAY' || L.colbon === 'TOTALREPAY' ? L.colrate : 0)
+             + (L.advbon === 'PRINREPAY' || L.advbon === 'TOTALREPAY' ? L.advrate : 0);
+        fixed = int
+          + feeOf(L.colrate, L.colbon === 'PRINREPAY' ? 'NONE' : L.colbon, 0, int, L.dbamt, B)
+          + feeOf(L.advrate, L.advbon === 'PRINREPAY' ? 'NONE' : L.advbon, 0, int, L.dbamt, B);
+        p = floorU((ability - fixed) / (1 + coef), u);
+        if (p >= B) p = B;
+      }
+      p = r2(p);
+
+      guard = 0;
+      while (guard++ < 100000) {
+        col = rnd(feeOf(L.colrate, L.colbon, p, int, L.dbamt, B), L.ccy);
+        adv = rnd(feeOf(L.advrate, L.advbon, p, int, L.dbamt, B), L.ccy);
+        if (method === 'ABP' && p < B && p > 0 && r2(p + int + col + adv) > ability) { p = r2(p - u); continue; }
+        break;
+      }
+      if (p <= 0) {
+        return { err: 'Ability Repayment ' + m(ability) + ' ' + L.ccy + ' does not cover the interest and fees of one instalment (' +
+          m(r2(int + col + adv)) + ' ' + L.ccy + ').' };
+      }
+
+      rows.push({ dt: iso(dt), ddt: dsp(dt), dn: dn, prin: p, int: int, col: col, adv: adv,
+                  tot: r2(p + int + col + adv), bal: r2(B - p), band: k <= reused ? 'reused' : 'added' });
+      B = r2(B - p); odt = dt;
+    }
+
+    // A schedule can come out SHORTER than the dates the loan already had (Ability Repayment with a
+    // high ability amount), so cap the reused count at the rows actually produced — otherwise the
+    // "added" figure goes negative.
+    var usedDates = Math.min(reused, rows.length);
+
+    return {
+      c: c, rows: rows, reused: usedDates, added: rows.length - usedDates,
+      remaining: c.fut.length, newTenor: rows.length, outstanding: c.bal,
+      oldMaturity: dsp(D(c.orig[c.orig.length - 1].dt)), newMaturity: dsp(D(rows[rows.length - 1].dt)),
+      waivedInt: r2(c.over.reduce(function (s, r) { return s + r.int + r.col + r.adv; }, 0)),
+      waivedPrin: r2(c.over.reduce(function (s, r) { return s + r.prin; }, 0)),
+      totPrin: r2(rows.reduce(function (s, r) { return s + r.prin; }, 0)),
+      totInt: r2(rows.reduce(function (s, r) { return s + r.int; }, 0)),
+      totCol: r2(rows.reduce(function (s, r) { return s + r.col; }, 0)),
+      totAll: r2(rows.reduce(function (s, r) { return s + r.tot; }, 0)),
+      totDays: rows.reduce(function (s, r) { return s + r.dn; }, 0)
+    };
+  }
+
+  /* ============================ display rows ============================ */
+  function displayRows(L, g) {
+    var out = [], no = 0;
+    g.c.kept.forEach(function (r) {
+      no++;
+      out.push({ no: no, ddt: r.ddt, dn: r.dn, prin: r.prin, pp: r.prin, int: r.int, ip: r.int,
+                 col: r.col, cp: r.col, adv: r.adv, ap: r.adv, tot: r.tot, tp: r.tot, bal: r.bal,
+                 sls: 'PAID', band: 'paid' });
+    });
+    g.c.over.forEach(function (r) {
+      no++;
+      out.push({ no: no, ddt: r.ddt, dn: r.dn, prin: 0, pp: 0, int: 0, ip: 0, col: 0, cp: 0, adv: 0, ap: 0,
+                 tot: 0, tp: 0, bal: r.bal, sls: 'PAID', band: 'closed', wasPrin: r.prin, wasTot: r.tot });
+    });
+    g.rows.forEach(function (r) {
+      no++;
+      out.push({ no: no, ddt: r.ddt, dn: r.dn, prin: r.prin, pp: 0, int: r.int, ip: 0, col: r.col, cp: 0,
+                 adv: r.adv, ap: 0, tot: r.tot, tp: 0, bal: r.bal, sls: 'NOT_PAY', band: r.band });
+    });
+    return out;
+  }
+
+  // The schedule as it stands, before any restructure. Splits the unpaid rows into the ones whose
+  // due date has already passed and the ones still to fall due — the second group is the remaining
+  // tenor, so the officer can see where that figure comes from.
+  function plainRows(L, trx) {
+    var c = classify(L, trx), rst = D(trx), out = [], no = 0;
+    c.orig.forEach(function (r, i) {
+      no++;
+      var paid = i < L.paid, od = !paid && D(r.dt) <= rst;
+      out.push({ no: no, ddt: r.ddt, dn: r.dn, prin: r.prin, pp: paid ? r.prin : 0, int: r.int, ip: paid ? r.int : 0,
+                 col: r.col, cp: paid ? r.col : 0, adv: r.adv, ap: paid ? r.adv : 0, tot: r.tot, tp: paid ? r.tot : 0,
+                 bal: r.bal, sls: paid ? 'PAID' : od ? 'OVERDUE' : 'NOT_PAY',
+                 band: paid ? 'paid' : od ? 'overdue' : 'due' });
+    });
+    return out;
+  }
+
+  /* ============================ state ============================ */
+  var S = { view: 'LIST', acct: null, trx: '', method: 'ENT', period: '', ability: '', g: null, err: null, showPaid: true };
+
+  var SCN = {
+    1: { a: 'A', d: '2026-09-21', m: 'ENT', p: '' },
+    2: { a: 'B', d: '2026-10-15', m: 'ENT', p: 20 },
+    3: { a: 'A', d: '2026-09-21', m: 'ENT', p: 20 },
+    5: { a: 'C', d: '2026-09-10', m: 'ABP', v: 5000 },
+    6: { a: 'C', d: '2026-09-10', m: 'ABP', v: 2000 },
+    7: { a: 'E', d: '2026-10-15', m: 'ENT', p: 6 },
+    8: { a: 'W', d: '2026-06-20', m: 'ENT', p: 10 },
+    9: { a: 'E', d: '2026-10-15', m: 'ENT' }
+  };
+
+  /* ============================ list view ============================ */
+  function renderList() {
+    el('listBody').innerHTML = ACCTS.map(function (L, i) {
+      var c = classify(L, L.today);
+      var st = c.fut.length === 0 ? 'Past maturity' : c.over.length ? 'Part overdue' : 'Current';
+      var cls = c.fut.length === 0 ? 'od' : c.over.length ? 'od' : 'ok';
+      return '<tr data-acct="' + L.key + '">' +
+        '<td><code>RST-26-' + String(1041 + i) + '</code></td>' +
+        '<td>' + dsp(D(L.today)) + '</td>' +
+        '<td><span class="state ' + cls + '">' + st + '</span></td>' +
+        '<td><code>' + esc(L.code) + '</code></td>' +
+        '<td>' + esc(L.cus) + '</td>' +
+        '<td class="r">' + m(L.dbamt) + ' ' + L.ccy + '</td>' +
+        '<td class="r">' + m(c.bal) + ' ' + L.ccy + '</td>' +
+        '<td>' + L.inmtxt + ' · ' + L.n + ' inst.</td></tr>';
+    }).join('');
+    Array.prototype.forEach.call(el('listBody').querySelectorAll('tr'), function (tr) {
+      tr.addEventListener('click', function () { openAccount(tr.getAttribute('data-acct')); });
+    });
+  }
+
+  /* ============================ customer picker ============================ */
+  function openPicker() {
+    var html =
+      '<div class="backdrop" id="bd"><div class="modal"><div class="mh"><h3>Account Number</h3>' +
+      '<button id="mClose" aria-label="Close">&times;</button></div><div class="mb">' +
+      '<div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
+      '<input id="mSearch" placeholder="Search by name or account number…" autocomplete="off"></div>' +
+      '<div class="tw"><table class="list"><thead><tr><th style="width:44px">Select</th><th>Account number</th>' +
+      '<th class="r">Disbursed</th><th class="r">Outstanding</th><th>State</th></tr></thead>' +
+      '<tbody id="mBody"></tbody></table></div></div></div></div>';
+    el('modalWrap').innerHTML = html;
+
+    function paint(q) {
+      q = (q || '').toLowerCase();
+      el('mBody').innerHTML = ACCTS.filter(function (L) {
+        return !q || L.cus.toLowerCase().indexOf(q) >= 0 || L.code.toLowerCase().indexOf(q) >= 0;
+      }).map(function (L) {
+        var c = classify(L, L.today);
+        var st = c.fut.length === 0 ? 'Past maturity' : c.over.length ? 'Part overdue' : 'Current';
+        var cls = c.fut.length === 0 ? 'od' : c.over.length ? 'od' : 'ok';
+        var ini = L.cus.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2);
+        return '<tr data-acct="' + L.key + '"><td><input type="radio" name="pk"' +
+          (S.acct === L.key ? ' checked' : '') + '></td>' +
+          '<td><div class="pickrow"><span class="av">' + esc(ini) + '</span><span><span class="nm">' +
+          esc(L.cus) + '</span><br><span class="cd">' + esc(L.code) + ' · ' + L.inmtxt + '</span></span></div></td>' +
+          '<td class="r">' + m(L.dbamt) + ' ' + L.ccy + '</td>' +
+          '<td class="r">' + m(c.bal) + ' ' + L.ccy + '</td>' +
+          '<td><span class="state ' + cls + '">' + st + '</span></td></tr>';
+      }).join('') || '<tr><td colspan="5" style="color:var(--muted)">No account matches that search.</td></tr>';
+
+      Array.prototype.forEach.call(el('mBody').querySelectorAll('tr[data-acct]'), function (tr) {
+        tr.addEventListener('click', function () {
+          close();
+          openAccount(tr.getAttribute('data-acct'));
+        });
+      });
+    }
+    function close() { el('modalWrap').innerHTML = ''; document.removeEventListener('keydown', onKey); }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+
+    paint('');
+    el('mClose').addEventListener('click', close);
+    el('bd').addEventListener('click', function (e) { if (e.target === el('bd')) close(); });
+    el('mSearch').addEventListener('input', function () { paint(this.value); });
+    document.addEventListener('keydown', onKey);
+    el('mSearch').focus();
+  }
+
+  /* ============================ form ============================ */
+  function openAccount(key) {
+    var L = BY_KEY[key];
+    S.acct = key; S.trx = L.today; S.period = ''; S.ability = ''; S.method = 'ENT';
+    go('FORM'); syncInputs(); recompute();
+  }
+
+  function syncInputs() {
+    var L = S.acct ? BY_KEY[S.acct] : null;
+    el('pickTxt').textContent = L ? (L.cus + '  ·  ' + L.code) : 'Select customer…';
+    el('pickTxt').className = L ? '' : 'ph';
+    el('fAddr').value = L ? L.addr : '';
+    el('fCo').value = L ? L.co : '';
+    el('fDate').value = S.trx;
+    el('fMethod').value = S.method;
+    el('fPeriod').value = S.period;
+    el('fAbility').value = S.ability;
+    el('supDisb').textContent = L ? ('Disbursed ' + m(L.dbamt) + ' ' + L.ccy) : '';
+    el('hintAcct').textContent = L
+      ? (L.inmtxt + ' · ' + L.n + ' instalments · ' + L.ratetxt + ' · matures ' + dsp(D(buildOriginal(L)[L.n - 1].dt)))
+      : 'Pick an account to load its schedule.';
+    el('wrapPeriod').classList.toggle('hide', S.method !== 'ENT');
+    el('wrapAbility').classList.toggle('hide', S.method !== 'ABP');
+    el('wrapNewTenor').classList.toggle('hide', S.method === 'CSH');
+    el('wrapRemain').classList.toggle('hide', S.method === 'CSH');
+    el('btnPrint').disabled = S.method === 'CSH' || !S.g;
+  }
+
+  function recompute() {
+    var L = S.acct ? BY_KEY[S.acct] : null;
+    S.g = null; S.err = null;
+
+    if (!L) {
+      el('fRemain').value = ''; el('fNewTenor').value = ''; el('hintNewTenor').textContent = '';
+      el('formAlert').innerHTML = '<div class="alert info"><div><b>No account selected</b>' +
+        'Choose an account number, or press one of the case buttons at the top of the page.</div></div>';
+      el('sumStrip').innerHTML = ''; el('legend').innerHTML = '';
+      el('gridWrap').innerHTML = '<div style="padding:34px 16px;color:var(--muted);text-align:center">The loan schedule appears here once an account is selected.</div>';
+      el('gridFoot').textContent = '';
+      syncInputs();
+      return;
+    }
+
+    var c = classify(L, S.trx);
+    el('fRemain').value = c.fut.length;
+    el('hintRemain').textContent = c.fut.length === 0
+      ? 'Nothing is scheduled after ' + dsp(D(S.trx)) + '. Maturity ' + dsp(D(c.orig[L.n - 1].dt)) + ' has passed, so the remaining tenor is zero.'
+      : c.fut.length + ' instalment' + (c.fut.length === 1 ? '' : 's') + ' due between ' +
+        c.fut[0].ddt + ' and ' + c.fut[c.fut.length - 1].ddt +
+        (c.over.length ? ' · ' + c.over.length + ' instalment' + (c.over.length === 1 ? ' is' : 's are') + ' already overdue and not counted' : '');
+
+    if (S.method === 'CSH') {
+      el('fNewTenor').value = ''; el('hintNewTenor').textContent = '';
+      el('formAlert').innerHTML = '<div class="alert info"><div><b>Customer Schedule</b>' +
+        'The schedule below is the loan as it stands. In the real screen the officer edits the dates and principal by hand, row by row — nothing is calculated automatically.</div></div>';
+      renderSummary(L, c, null);
+      renderGrid(L, plainRows(L, S.trx), null);
+      syncInputs();
+      return;
+    }
+
+    var period = parseInt(S.period, 10);
+    var ability = parseFloat(S.ability);
+    var ready = S.method === 'ENT' ? period >= 1 : ability > 0;
+
+    if (!ready) {
+      el('fNewTenor').value = ''; el('hintNewTenor').textContent = '';
+      el('formAlert').innerHTML = '<div class="alert info"><div><b>' +
+        (S.method === 'ENT' ? 'Enter the number of instalments to add' : 'Enter the amount the customer can repay') + '</b>' +
+        (S.method === 'ENT'
+          ? 'Remaining tenor is ' + c.fut.length + '. Type a figure in Extend Number of Tenor and the new schedule is built immediately.'
+          : 'Type what the customer can pay each instalment and the system works out how many instalments are needed.') +
+        '</div></div>';
+      renderSummary(L, c, null);
+      renderGrid(L, plainRows(L, S.trx), null);
+      syncInputs();
+      return;
+    }
+
+    var g = generate(L, S.trx, S.method, period, ability);
+    if (g.err) {
+      S.err = g.err;
+      el('fNewTenor').value = '—'; el('hintNewTenor').textContent = '';
+      el('formAlert').innerHTML = '<div class="alert"><div><b>Cannot build the schedule</b>' + esc(g.err) + '</div></div>';
+      renderSummary(L, c, null);
+      renderGrid(L, plainRows(L, S.trx), null);
+      syncInputs();
+      return;
+    }
+
+    S.g = g;
+    el('fNewTenor').value = g.newTenor;
+    el('hintNewTenor').textContent = S.method === 'ENT'
+      ? g.remaining + ' remaining + ' + period + ' added'
+      : g.reused + ' on existing dates' + (g.added ? ' + ' + g.added + ' generated' : '');
+
+    var notes = [];
+    if (g.c.over.length) {
+      notes.push('<div class="alert warn"><div><b>' + g.c.over.length + ' overdue instalment' +
+        (g.c.over.length === 1 ? '' : 's') + ' closed off at ' + dsp(D(S.trx)) + '</b>Unpaid principal of ' +
+        m(g.waivedPrin) + ' ' + L.ccy + ' moves into the new schedule. Unpaid interest and fees of ' +
+        m(g.waivedInt) + ' ' + L.ccy + ' are written off and the rows are stamped PAID.</div></div>');
+    }
+    if (S.method === 'ABP' && g.newTenor < g.remaining) {
+      notes.push('<div class="alert warn"><div><b>This shortens the loan</b>' + m(ability) + ' ' + L.ccy +
+        ' per instalment is more than the customer was paying, so the tenor falls from ' + g.remaining +
+        ' to ' + g.newTenor + ' and maturity moves back from ' + g.oldMaturity + ' to ' + g.newMaturity + '.</div></div>');
+    }
+    var lastRow = g.rows[g.rows.length - 1];
+    if (S.method === 'ABP' && g.rows.length > 1 && lastRow.tot < ability * 0.1) {
+      notes.push('<div class="alert warn"><div><b>Small final instalment</b>The last instalment is only ' +
+        m(lastRow.tot) + ' ' + L.ccy + '. The arithmetic is right, but it costs the customer an extra collection visit.</div></div>');
+    }
+    el('formAlert').innerHTML = notes.join('');
+
+    renderSummary(L, c, g);
+    renderGrid(L, displayRows(L, g), g);
+    syncInputs();
+  }
+
+  function renderSummary(L, c, g) {
+    var items = [
+      { k: 'Disbursed', v: m(L.dbamt), s: L.ccy },
+      { k: 'Original tenor', v: L.n, s: L.inmtxt.toLowerCase() + ' instalments' },
+      { k: 'Paid', v: L.paid, s: c.paidPrin ? m(c.paidPrin) + ' ' + L.ccy : '—' },
+      { k: 'Overdue', v: c.over.length, s: c.over.length ? 'closed at restructure' : 'none' },
+      { k: 'Remaining tenor', v: c.fut.length, s: 'after ' + dsp(D(S.trx)), cls: 'a' },
+      { k: 'Outstanding', v: m(c.bal), s: L.ccy }
+    ];
+    if (g) {
+      items.push({ k: 'New tenor', v: g.newTenor, s: g.added ? g.reused + ' + ' + g.added + ' new dates' : 'on existing dates', cls: 'b' });
+      items.push({ k: 'New maturity', v: '<span style="font-size:15px">' + g.newMaturity + '</span>', s: 'was ' + g.oldMaturity, cls: 'b' });
+      items.push({ k: 'Interest to pay', v: m(g.totInt), s: L.ccy });
+    }
+    el('sumStrip').innerHTML = items.map(function (i) {
+      return '<div class="' + (i.cls || '') + '"><dt>' + i.k + '</dt><dd>' + i.v +
+        (i.s ? '<small>' + i.s + '</small>' : '') + '</dd></div>';
+    }).join('');
+  }
+
+  var COLS = ['No.', 'Repayment date', 'Days', 'Principal', 'Paid', 'Interest', 'Paid', 'Coll. fee', 'Paid',
+              'Adv. fee', 'Paid', 'Total amount', 'Total paid', 'Ending balance', 'Status'];
+
+  function renderGrid(L, rows, g) {
+    var t = { prin: 0, pp: 0, int: 0, ip: 0, col: 0, cp: 0, adv: 0, ap: 0, tot: 0, tp: 0 };
+    rows.forEach(function (r) {
+      t.prin += r.prin; t.pp += r.pp; t.int += r.int; t.ip += r.ip; t.col += r.col;
+      t.cp += r.cp; t.adv += r.adv; t.ap += r.ap; t.tot += r.tot; t.tp += r.tp;
+    });
+    var balanced = Math.abs(r2(t.prin) - L.dbamt) < 0.005;
+    var tick = balanced
+      ? '<span style="color:var(--teal);font-weight:700" title="Principal matches the disbursed amount">&#10003;</span> '
+      : '<span style="color:var(--crimson);font-weight:700" title="Principal does not match the disbursed amount">&#10007;</span> ';
+
+    var head =
+      '<thead><tr class="tot"><th class="l ttl" colspan="3">Totals · ' + rows.length + ' instalments</th>' +
+      '<th>' + tick + m(t.prin) + '</th><th>' + m(t.pp) + '</th><th>' + m(t.int) + '</th><th>' + m(t.ip) + '</th>' +
+      '<th>' + m(t.col) + '</th><th>' + m(t.cp) + '</th><th>' + m(t.adv) + '</th><th>' + m(t.ap) + '</th>' +
+      '<th>' + m(t.tot) + '</th><th>' + m(t.tp) + '</th><th colspan="2"></th></tr><tr class="cols">' +
+      COLS.map(function (c, i) {
+        return '<th class="' + (i === 0 || i === 2 ? 'c' : i === 1 || i === 14 ? 'l' : '') + '">' + c + '</th>';
+      }).join('') + '</tr></thead>';
+
+    var sep = function (txt, rt) {
+      return '<tr class="sep"><td colspan="15">' + txt + (rt ? '<span class="rt">' + rt + '</span>' : '') + '</td></tr>';
+    };
+
+    function tally(band, field) {
+      return rows.reduce(function (s, r) { return r.band === band ? s + (field ? r[field] : 1) : s; }, 0);
+    }
+    var nOver = tally('overdue'), pOver = r2(tally('overdue', 'prin'));
+    var nDue = tally('due');
+
+    var body = '', shownPaid = false, shownClosed = false, shownNew = false, shownAdd = false,
+        shownOver = false, shownDue = false, hiddenPaid = 0;
+    rows.forEach(function (r) {
+      if (r.band === 'paid') {
+        if (!S.showPaid) { hiddenPaid++; return; }
+        if (!shownPaid) { shownPaid = true; body += sep('Settled before the restructure date', 'paid in full'); }
+      }
+      if (r.band === 'overdue' && !shownOver) {
+        shownOver = true;
+        body += sep('Overdue — ' + nOver + ' instalment' + (nOver === 1 ? '' : 's') + ' past due on ' + dsp(D(S.trx)),
+          m(pOver) + ' ' + L.ccy + ' principal · not counted in the remaining tenor');
+      }
+      if (r.band === 'due' && !shownDue) {
+        shownDue = true;
+        body += sep('Remaining tenor — ' + nDue + ' instalment' + (nDue === 1 ? '' : 's') + ' not yet due',
+          'this is the figure in the Remaining Tenor box');
+      }
+      if (r.band === 'closed' && !shownClosed) {
+        shownClosed = true;
+        body += sep('Overdue — closed off at ' + dsp(D(S.trx)), 'principal carried into the new schedule');
+      }
+      if (r.band === 'reused' && !shownNew) {
+        shownNew = true;
+        body += sep('New schedule — on the dates the loan already had', 'from ' + dsp(D(S.trx)));
+      }
+      if (r.band === 'added' && !shownAdd) {
+        shownAdd = true;
+        body += sep('New schedule — dates added by the restructure', g ? 'past ' + g.oldMaturity : '');
+      }
+      var slsCls = (r.band === 'closed' || r.band === 'overdue') ? 'c'
+                 : r.sls === 'PAID' ? 'p' : (r.band === 'added' ? 'n a' : 'n');
+      body += '<tr class="' + r.band + '"><td class="c">' + r.no + '</td><td class="l">' + r.ddt +
+        '</td><td class="c">' + r.dn + '</td><td>' + m(r.prin) + '</td><td>' + m(r.pp) + '</td><td>' + m(r.int) +
+        '</td><td>' + m(r.ip) + '</td><td>' + m(r.col) + '</td><td>' + m(r.cp) + '</td><td>' + m(r.adv) +
+        '</td><td>' + m(r.ap) + '</td><td>' + m(r.tot) + '</td><td>' + m(r.tp) + '</td><td>' + m(r.bal) +
+        '</td><td class="l"><span class="sls ' + slsCls + '">' + r.sls + '</span></td></tr>';
+    });
+    if (hiddenPaid) body = sep(hiddenPaid + ' settled instalments hidden', 'tick “Show settled instalments” to list them') + body;
+
+    el('gridWrap').innerHTML = '<table class="g">' + head + '<tbody>' + body + '</tbody></table>';
+
+    el('legend').innerHTML = g
+      ? '<span><i class="paid"></i> Settled</span>' +
+        (g.c.over.length ? '<span><i class="closed"></i> Overdue, closed off (' + g.c.over.length + ')</span>' : '') +
+        '<span><i class="reused"></i> New schedule, existing dates (' + g.reused + ')</span>' +
+        (g.added ? '<span><i class="added"></i> Added by the restructure (' + g.added + ')</span>' : '')
+      : '<span><i class="paid"></i> Settled</span>' +
+        (nOver ? '<span><i class="closed"></i> Overdue (' + nOver + ')</span>' : '') +
+        (nDue ? '<span><i class="reused"></i> Remaining tenor (' + nDue + ')</span>' : '');
+
+    el('gridFoot').innerHTML = balanced
+      ? 'Total principal ' + m(t.prin) + ' ' + L.ccy + ' matches the disbursed amount, so the schedule balances.'
+      : 'Total principal ' + m(t.prin) + ' ' + L.ccy + ' does not match the disbursed amount of ' + m(L.dbamt) +
+        ' ' + L.ccy + '. The real screen refuses to save in this state.';
+  }
+
+  /* ============================ report ============================ */
+  function renderReport() {
+    var L = BY_KEY[S.acct], g = S.g, withOld = el('cbRptOld').checked;
+    if (!g) return;
+
+    function f(kh, en, v) {
+      return '<div class="r"><div class="k"><span class="kh">' + kh + '</span><br>' + en +
+        '</div><div class="v">' + v + '</div></div>';
+    }
+    var info =
+      f('លេខកិច្ចសន្យា (LD)', 'Contract no.', esc(L.code)) +
+      f('លេខកូដអតិថិជន (CIF)', 'Customer code', esc(L.cif)) +
+      f('ឈ្មោះអតិថិជន', 'Customer name', esc(L.cus)) +
+      f('អាសយដ្ឋាន', 'Address', esc(L.addr)) +
+      f('កាលបរិច្ឆេទខ្ចី', 'Disbursement date', dsp(D(L.disb))) +
+      f('ចំនួនទឹកប្រាក់', 'Loan amount', m(L.dbamt) + ' ' + L.ccy) +
+      f('អត្រាការប្រាក់', 'Interest rate', esc(L.ratetxt)) +
+      f('រយៈពេលបង់', 'Repayment', L.inmtxt);
+
+    var meth = S.method === 'ENT' ? 'Extend Tenor' : 'Ability Repayment';
+    var mid = S.method === 'ENT'
+      ? '<div>Added tenor<b>+' + (g.newTenor - g.remaining) + '</b></div>'
+      : '<div>Ability repayment<b>' + m(parseFloat(S.ability)) + '</b></div>';
+
+    var box = '<div class="cap">Restructure details</div><div class="cols">' +
+      '<div>Restructure date<b style="font-size:15px">' + dsp(D(S.trx)) + '</b></div>' +
+      '<div>Method<b style="font-size:15px">' + meth + '</b></div>' +
+      '<div>Original tenor<b>' + L.n + '</b></div>' +
+      '<div>Remaining tenor<b>' + g.remaining + '</b></div>' + mid +
+      '<div>New tenor<b>' + g.newTenor + '</b></div>' +
+      '<div>Principal to repay<b>' + m(g.outstanding) + '</b></div>' +
+      '<div>New maturity<b style="font-size:15px">' + g.newMaturity + '</b></div></div>';
+
+    var H = '<thead><tr class="cols"><th class="c kh">ល.រ<br>No.</th><th class="l"><span class="kh">កាលបរិច្ឆេទ</span><br>Date</th>' +
+      '<th class="c"><span class="kh">ថ្ងៃ</span><br>Days</th><th><span class="kh">ប្រាក់ដើម</span><br>Principal</th>' +
+      '<th><span class="kh">ការប្រាក់</span><br>Interest</th>' +
+      (g.totCol ? '<th><span class="kh">ថ្លៃសេវា</span><br>Coll. fee</th>' : '') +
+      '<th><span class="kh">ប្រាក់សរុបត្រូវបង់</span><br>Total repay</th>' +
+      '<th><span class="kh">ប្រាក់ដើមនៅជំពាក់</span><br>Outstanding</th></tr></thead>';
+    var span = g.totCol ? 8 : 7;
+
+    var body = '';
+    if (withOld) {
+      body += '<tr class="sep"><td colspan="' + span + '">Settled before the restructure — ' + L.paid +
+        ' instalments, principal ' + m(g.c.paidPrin) + ' ' + L.ccy +
+        '<span class="rt">' + dsp(D(L.disb)) + ' to ' + dsp(D(S.trx)) + '</span></td></tr>';
+      if (g.c.over.length) {
+        body += '<tr class="sep"><td colspan="' + span + '">Overdue, closed at the restructure date — ' +
+          g.c.over.length + ' instalments<span class="rt">principal ' + m(g.waivedPrin) +
+          ' carried forward, ' + m(g.waivedInt) + ' written off</span></td></tr>';
+      }
+    }
+    var shown = false, no = 0;
+    body += '<tr class="sep"><td colspan="' + span + '">New schedule<span class="rt">from ' +
+      dsp(D(S.trx)) + ' · principal ' + m(g.outstanding) + ' ' + L.ccy + '</span></td></tr>';
+    g.rows.forEach(function (r) {
+      no++;
+      if (r.band === 'added' && !shown) {
+        shown = true;
+        body += '<tr class="sep"><td colspan="' + span + '">Added tenor — ' + g.added +
+          ' instalments<span class="rt">past the original maturity ' + g.oldMaturity + '</span></td></tr>';
+      }
+      body += '<tr class="' + r.band + '"><td class="c">' + no + '</td><td class="l">' + r.ddt +
+        '</td><td class="c">' + r.dn + '</td><td>' + m(r.prin) + '</td><td>' + m(r.int) + '</td>' +
+        (g.totCol ? '<td>' + m(r.col) + '</td>' : '') +
+        '<td>' + m(r.tot) + '</td><td>' + m(r.bal) + '</td></tr>';
+    });
+
+    var foot = '<tfoot><tr><td colspan="2" class="l"><span class="kh">សរុប</span> · Total</td><td class="c">' +
+      g.totDays + '</td><td>' + m(g.totPrin) + '</td><td>' + m(g.totInt) + '</td>' +
+      (g.totCol ? '<td>' + m(g.totCol) + '</td>' : '') +
+      '<td>' + m(g.totAll) + '</td><td></td></tr></tfoot>';
+
+    el('sheet').innerHTML =
+      '<div class="rh"><div class="org">KOMCHEY</div>' +
+      '<div class="kh">កាលវិភាគសងប្រាក់</div><h4>Restructure Loan Schedule</h4></div>' +
+      '<div class="ri">' + info + '</div><div class="rx">' + box + '</div>' +
+      '<div class="tw"><table class="g">' + H + '<tbody>' + body + '</tbody>' + foot + '</table></div>' +
+      '<div class="sg"><div><span>Prepared by · Credit Officer</span></div>' +
+      '<div><span>Checked by · Branch Manager</span></div><div><span>Approved by</span></div>' +
+      '<div><span>Customer thumbprint / signature</span></div></div>';
+  }
+
+  /* ============================ view switching ============================ */
+  function go(v) {
+    S.view = v;
+    el('viewList').classList.toggle('hide', v !== 'LIST');
+    el('viewForm').classList.toggle('hide', v !== 'FORM');
+    el('viewReport').classList.toggle('hide', v !== 'REPORT');
+    el('viewPill').textContent = v === 'LIST' ? 'List' : v === 'FORM' ? 'Entry' : 'Report';
+    window.scrollTo(0, 0);
+  }
+
+  /* ============================ wiring ============================ */
+  el('btnNew').addEventListener('click', function () {
+    S.acct = null; S.trx = '2026-09-21'; S.method = 'ENT'; S.period = ''; S.ability = '';
+    go('FORM'); recompute();
+  });
+  el('btnBack').addEventListener('click', function () { go('LIST'); });
+  el('pickAcct').addEventListener('click', openPicker);
+  el('fDate').addEventListener('change', function () { S.trx = this.value || S.trx; recompute(); });
+  el('fMethod').addEventListener('change', function () { S.method = this.value; recompute(); });
+  el('fPeriod').addEventListener('input', function () { S.period = this.value; recompute(); });
+  el('fAbility').addEventListener('input', function () { S.ability = this.value; recompute(); });
+  el('cbPaid').addEventListener('change', function () { S.showPaid = this.checked; recompute(); });
+  el('btnCalc').addEventListener('click', recompute);
+  el('btnReset').addEventListener('click', function () {
+    if (!S.acct) return;
+    var L = BY_KEY[S.acct];
+    S.trx = L.today; S.period = ''; S.ability = ''; S.method = 'ENT';
+    syncInputs(); recompute();
+  });
+  el('btnSave').addEventListener('click', function () {
+    if (!S.acct) { alert('Select an account first.'); return; }
+    if (S.method !== 'CSH' && !S.g) { alert('The schedule is not ready to save.\n\n' + (S.err || 'Enter the missing figure first.')); return; }
+    alert('This is a prototype, so nothing is written to the database.\n\n' +
+      'In the real module this would save the transaction as PENDING and send it for approval.');
+  });
+  el('btnPrint').addEventListener('click', function () {
+    if (!S.g) return;
+    go('REPORT'); renderReport();
+  });
+  el('btnRptBack').addEventListener('click', function () { go('FORM'); });
+  el('cbRptOld').addEventListener('change', renderReport);
+  el('btnDoPrint').addEventListener('click', function () { window.print(); });
+
+  // Load a known situation straight into the form. Used by the regression test that checks
+  // the engine still returns the agreed figures for each case.
+  window.loadCase = function (n) {
+    var s = SCN[n];
+    if (!s) return false;
+    S.acct = s.a; S.trx = s.d; S.method = s.m;
+    S.period = s.p === undefined ? '' : s.p;
+    S.ability = s.v === undefined ? '' : s.v;
+    go('FORM'); syncInputs(); recompute();
+    return true;
+  };
+
+  renderList();
+  recompute();
+})();
+</script>
+
+</body>
+</html>
