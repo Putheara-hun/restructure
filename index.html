@@ -581,14 +581,14 @@
       }
 
       rows.push({ dt: iso(dt), ddt: dsp(dt), dn: dn, prin: p, int: int, col: col, adv: adv,
-                  tot: r2(p + int + col + adv), bal: r2(B - p), band: k <= reused ? 'reused' : 'added' });
+                  tot: r2(p + int + col + adv), bal: r2(B - p), band: (method === 'ABP' || k <= reused) ? 'reused' : 'added' });
       B = r2(B - p); odt = dt;
     }
 
     // A schedule can come out SHORTER than the dates the loan already had (Ability to Repayment with a
     // high ability amount), so cap the reused count at the rows actually produced — otherwise the
     // "added" figure goes negative.
-    var usedDates = Math.min(reused, rows.length);
+    var usedDates = rows.filter(function (r) { return r.band === 'reused'; }).length;
 
     return {
       c: c, rows: rows, reused: usedDates, added: rows.length - usedDates,
@@ -819,7 +819,7 @@
     el('fNewTenor').value = g.newTenor;
     el('hintNewTenor').textContent = S.method === 'ENT'
       ? g.remaining + ' remaining + ' + period + ' added'
-      : g.reused + ' replacing the remaining tenor' + (g.added ? ' + ' + g.added + ' added' : '');
+      : 'worked out from the ability amount';
 
     var notes = [];
     if (g.c.over.length) {
