@@ -15,7 +15,7 @@ tenor or ability amount can be tried, not only the prepared examples.
 | Method | What the officer enters | What the system works out |
 | --- | --- | --- |
 | Extend Number of Tenor | instalments to add | new tenor = remaining + added |
-| Ability Repayment | amount per instalment | how many instalments clear the debt |
+| Ability to Repayment | amount per instalment | how many instalments clear the debt |
 | Customer Schedule | the schedule by hand | nothing — manual entry |
 
 **Remaining Tenor** fills in from the customer selection alone, and re-counts if the Transaction
@@ -49,7 +49,7 @@ These come up as warnings in the prototype at the moment they occur:
 
 1. **Overdue instalments** are closed off at the restructure date — unpaid principal moves into the
    new schedule, unpaid interest and fees are written off. Confirm this is intended.
-2. **Ability Repayment can shorten a loan** when the stated ability is higher than the current
+2. **Ability to Repayment can shorten a loan** when the stated ability is higher than the current
    instalment. Allow it, warn, or block?
 3. **A very small final instalment** can appear (e.g. 13.44). Fold it into the instalment before it?
 4. **"Tenor" means instalments, not days.** On a weekly or monthly loan, 20 is 20 instalments.

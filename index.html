@@ -338,7 +338,7 @@
           <label>Restructure Method <span class="rq">*</span></label>
           <select class="ctrl" id="fMethod">
             <option value="ENT">Extend Number of Tenor</option>
-            <option value="ABP">Ability Repayment</option>
+            <option value="ABP">Ability to Repayment</option>
             <option value="CSH">Customer Schedule</option>
           </select>
         </div>
@@ -356,7 +356,7 @@
         </div>
 
         <div class="fld hide" id="wrapAbility">
-          <label>Ability Repayment <span class="rq">*</span></label>
+          <label>Ability to Repayment <span class="rq">*</span></label>
           <input class="ctrl" id="fAbility" type="number" step="any" placeholder="Amount per instalment">
           <div class="hint">Any amount the customer states, interest and fees included. The schedule
             rebuilds on every keystroke.</div>
@@ -528,7 +528,7 @@
     }
     if (c.bal <= 0) return { err: 'This loan has no outstanding principal to restructure.' };
     if (method === 'ENT' && !(period >= 1)) return { err: 'Extend Number of Tenor must be at least 1.' };
-    if (method === 'ABP' && !(ability > 0)) return { err: 'Ability Repayment must be more than 0.' };
+    if (method === 'ABP' && !(ability > 0)) return { err: 'Ability to Repayment must be more than 0.' };
 
     // Every new instalment date runs forward from the restructure date at the loan's own
     // frequency. The dates the old schedule carried are NOT reused, so the customer always gets a
@@ -585,7 +585,7 @@
       B = r2(B - p); odt = dt;
     }
 
-    // A schedule can come out SHORTER than the dates the loan already had (Ability Repayment with a
+    // A schedule can come out SHORTER than the dates the loan already had (Ability to Repayment with a
     // high ability amount), so cap the reused count at the rows actually produced — otherwise the
     // "added" figure goes negative.
     var usedDates = Math.min(reused, rows.length);
@@ -973,10 +973,10 @@
       f('អត្រាការប្រាក់', 'Interest rate', esc(L.ratetxt)) +
       f('រយៈពេលបង់', 'Repayment', L.inmtxt);
 
-    var meth = S.method === 'ENT' ? 'Extend Tenor' : 'Ability Repayment';
+    var meth = S.method === 'ENT' ? 'Extend Tenor' : 'Ability to Repayment';
     var mid = S.method === 'ENT'
       ? '<div>Added tenor<b>+' + (g.newTenor - g.remaining) + '</b></div>'
-      : '<div>Ability repayment<b>' + m(parseFloat(S.ability)) + '</b></div>';
+      : '<div>Ability to Repayment<b>' + m(parseFloat(S.ability)) + '</b></div>';
 
     var box = '<div class="cap">Restructure details</div><div class="cols">' +
       '<div>Restructure date<b style="font-size:15px">' + dsp(D(S.trx)) + '</b></div>' +
